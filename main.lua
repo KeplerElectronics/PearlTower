@@ -21,7 +21,7 @@ local windowWidth, windowHeight = love.window.getDesktopDimensions()
 push:setupScreen(gameWidth, gameHeight, windowWidth, windowHeight, {fullscreen = true})
 
 function lerp(a,b,t) 
-    local dt = love.timer.getDelta()
+    local dt=getDT()
     return (b+(a-b)*math.exp(-t*dt))
     --return (1-t)*a + t*b 
 end
@@ -445,6 +445,14 @@ function love.load()
     
 end
 
+function getDT()
+    local dt=love.timer.getDelta()
+    if dt>0.3 then
+        dt=0.3
+    end
+    return dt
+end
+
 function load()
     if webexport==false then
         svfl=bitser.loadLoveFile("SaveFile")
@@ -577,6 +585,7 @@ end
 
 
 function love.update(dt)
+    local dt=getDT()
     kep_audio()
     if gamestate=="play" then
         playupdate(dt)
@@ -707,7 +716,7 @@ end
 
 function love.draw()
     push:start()
-    local dt=love.timer.getDelta()
+    local dt=getDT()
 
     if gamestate=="menu" then
         love.graphics.draw(title,0,0)
@@ -1192,10 +1201,15 @@ function pcollision(plyr,dt)
         p[plyr].vy=0
     end
     --land
-    if checkSolid((p[plyr].x),(p[plyr].y)) and p[plyr].vy>0 then
-        p[plyr].y=floor(p[plyr].y/8)*8
-        landing(plyr)
-        
+    for i=0,p[plyr].vy*dt,8 do
+        if checkSolid((p[plyr].x),(p[plyr].y+i)) and p[plyr].vy>0 then
+            p[plyr].y=floor(p[plyr].y/8+i/8)*8
+            landing(plyr)
+            if checkSolid((p[plyr].x),(p[plyr].y-p[plyr].h/2)) then
+                p[plyr].y=p[plyr].y-8
+            end 
+            break
+        end
     end
 
     --right col
@@ -1258,7 +1272,7 @@ function pcollision(plyr,dt)
 end
 
 function landing(plyr)
-    local dt=love.timer.getDelta()
+    local dt=getDT()
     p[plyr].canjump=0.05
     p[plyr].vy=0
     p[plyr].vx=p[plyr].vx*(1-3*dt)
@@ -1533,7 +1547,7 @@ function sp_ptc(x,y,vx,vy,l,img,w)
 end
 
 function ptclgc()
-    local dt=love.timer.getDelta()
+    local dt=getDT()
     for i,ptc in ipairs(ptcs) do
 
         if ptc.vx ==0 and ptc.vy==0 then ptc.vy=30 end
@@ -1583,7 +1597,7 @@ function entfuncs.dbljmp_l(id)
             return
         end
     end
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].ct=ents[id].ct+dt
 
@@ -1615,7 +1629,7 @@ function entfuncs.run_l(id)
             return
         end
     end
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].ct=ents[id].ct+dt
 
@@ -1647,7 +1661,7 @@ function entfuncs.float_l(id)
             return
         end
     end
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].ct=ents[id].ct+dt
 
@@ -1679,7 +1693,7 @@ function entfuncs.crawl_l(id)
             return
         end
     end
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].ct=ents[id].ct+dt
 
@@ -1711,7 +1725,7 @@ function entfuncs.sword_l(id)
             return
         end
     end
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].ct=ents[id].ct+dt
 
@@ -1743,7 +1757,7 @@ function entfuncs.pearl_l(id)
             return
         end
     end
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].ct=ents[id].ct+dt
 
@@ -1765,7 +1779,7 @@ function entfuncs.pearlRing_l(id)
     if ents[id].ct==nil then
         ents[id].ct=0
     end
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].ct=ents[id].ct+dt
 
@@ -1796,7 +1810,7 @@ function entfuncs.dropplat_l(id)
         ents[id].trig=false
     end
 
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     if platlogic(id) 
     and ents[id].trig==false then
@@ -1830,7 +1844,7 @@ function entfuncs.rustball_l(id)
         rustball=love.graphics.newImage("Sprites/rustball.png")
     end
     if paused~=true and pausing~=true and collectanim~= true then
-        local dt = love.timer.getDelta()
+        local dt=getDT()
 
         if ents[id].iframes~=nil then
             ents[id].iframes=ents[id].iframes-dt
@@ -1920,7 +1934,7 @@ function entfuncs.rustwalk_l(id)
         rustwalk=love.graphics.newImage("Sprites/RustWalk.png")
     end
 
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].x=ents[id].x+ents[id].vx*dt
     ents[id].y=ents[id].y+ents[id].vy*dt
@@ -1951,7 +1965,7 @@ function entfuncs.walker_l(id)
         ents[id].trig=false
         ents[id].health=3
     end
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     ents[id].y=ents[id].y+ents[id].vy*dt
     ents[id].x=ents[id].x+ents[id].vx*dt
@@ -2102,7 +2116,7 @@ function entfuncs.rustgib_l(id)
         end
     end
     
-    local dt = love.timer.getDelta()
+    local dt=getDT()
     ents[id].vy=ents[id].vy+550*dt
 
     ents[id].y=ents[id].y+ents[id].vy*dt
@@ -2143,7 +2157,7 @@ function entcollision(id,w,h)
     local floor=math.floor
     local ceil=math.ceil
     local ret={}
-    local dt=love.timer.getDelta()
+    local dt=getDT()
     --bonk
     if checkSolid((ents[id].x-w/2),(ents[id].y-h)) 
     or checkSolid((ents[id].x+w/2),(ents[id].y-h)) 
@@ -2210,7 +2224,7 @@ function platlogic(id,left,right)
         right = 16
     end
     
-    local dt = love.timer.getDelta()
+    local dt=getDT()
 
     if (p[1].x+p[1].vx*dt+p[1].w/2) < ents[id].x+right
     and (p[1].x+p[1].vx*dt+p[1].w/2) > ents[id].x+left
@@ -2246,7 +2260,18 @@ end
 function hurtplyr(id)
     if p[1].iframes==nil then
         p[1].health=p[1].health-1
-        p[1].vx=ents[id].vx*2
+        if p[1].x<ents[id].x then
+            p[1].vx=ents[id].vx*4-200
+        else
+            p[1].vx=ents[id].vx*4+200
+        end
+
+        if p[1].y<ents[id].y then
+            p[1].vy=ents[id].vy*4-100
+        else
+            p[1].vy=ents[id].vy*4+100
+        end
+
         p[1].iframes=0.7
         hurtsfx()
     end
@@ -2273,7 +2298,7 @@ function hitsfx()
 end
 
 function kep_audio()
-    local dt=love.timer.getDelta()
+    local dt=getDT()
 
     if not wind:isPlaying( ) then
         --love.audio.play(wind)
