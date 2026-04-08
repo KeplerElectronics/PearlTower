@@ -11,7 +11,7 @@ if webexport == false then
     bitser=require "Libraries/bitser"
 end
 
---local inputs=require "inputs"
+local inputs=require "inputs"
 
 love.graphics.setDefaultFilter("nearest", "nearest") --disable blurry scaling
 local gameWidth, gameHeight = 320, 180 --fixed game resolution
@@ -63,16 +63,22 @@ local newmap=nil
 local wipedelay=0.2
 local leveltransition=false
 
-p={{x=-24*8,y=-12,w=8,h=16,vx=0,vy=0,dir="right",canjump=0,maxhealth=6,health=6,
-    crouch=false,canfloat=false, float=0,candbljmp=false,doublejumped=false, 
-    swingtimer=0,swingdir=1, swinglen=28, swingdelay=0.5, swingx=10,swingy=10,swingw=20,swingh=20}}
+p={}
 
 pstate={hasrun=false, hasfloat=false, hasdbljmp=false, hascrawl=false, hasswing=false, pearlcount=0}
+
+function playeradd(x,y,animation)
+    local player={  x=x,y=y,w=8,h=16,vx=0,vy=0,dir="right",canjump=0,maxhealth=6,health=6,
+                    crouch=false,canfloat=false, float=0,candbljmp=false,doublejumped=false, 
+                    swingtimer=0,swingdir=1, swinglen=28, swingdelay=0.5, swingx=10,swingy=10,swingw=20,swingh=20,anim=LoveAnimation.new(animation);}
+    table.insert(p,player)
+end
+
+playeradd(-24*8,-12,'Sprites/PlayerAnim.lua')
 
 local lastx=0
 local lasty=0
 
-local anim = LoveAnimation.new('Sprites/PlayerAnim.lua');
 local swinganim = LoveAnimation.new('Sprites/SwingAnim.lua');
 local rustslimeanim = LoveAnimation.new('Sprites/RustSlimeAnim.lua');
 
@@ -477,7 +483,7 @@ function load()
     --spawn in ents in the dedicated ent layer
     checkents()
     camlims()
-    anim:setState("sleepidle")
+    p[1].anim:setState("sleepidle")
 end
 
 function save()
@@ -523,6 +529,53 @@ function camlims()
     end
 end
 
+function love.gamepadpressed(joystick, button)
+    --check if joystick is in use
+    for i=1,#p do
+        if joystick == p[i].joystick then
+            return
+        end
+    end
+
+    --if joystick is not in use:
+    for i=1,#p do
+        if p[i].joystick==nil then
+            p[i].joystick = joystick
+            local name = joystick:getName()
+            local index = joystick:getID()
+            print(string.format("Changing player ",i," gamepad to #%d '%s'.", index, name))
+            return
+        end
+    end
+    --if player does not exist:
+    playeradd(p[1].x-30,p[1].y,'Sprites/PlayerAnim2.lua')
+    p[#p].joystick=joystick
+end
+
+function love.joystickaxis(joystick, button)
+    --check if joystick is in use
+    for i=1,#p do
+        if joystick == p[i].joystick then
+            return
+        end
+    end
+
+    --if joystick is not in use:
+    for i=1,#p do
+        if p[i].joystick==nil then
+            p[i].joystick = joystick
+            local name = joystick:getName()
+            local index = joystick:getID()
+            print(string.format("Changing player ",i," gamepad to #%d '%s'.", index, name))
+            return
+        end
+    end
+    --if player does not exist:
+    playeradd(p[1].x-30,p[1].y,'Sprites/PlayerAnim2.lua')
+    p[#p].joystick=joystick
+end
+
+
 function love.update(dt)
     kep_audio()
     if gamestate=="play" then
@@ -553,10 +606,14 @@ function playupdate(dt)
         --game logic
         if paused==false then
 
-            input(1,dt)
-            pcollision(1,dt)
             
-            anim:update(dt)
+
+            for i=1,#p do
+                input(i,dt)
+                pcollision(i,dt)
+                p[i].anim:update(dt)
+            end
+
             swinganim:update(dt)
             rustslimeanim:update(dt)
             rust2:update(dt)
@@ -592,13 +649,17 @@ function playupdate(dt)
             wipestate=wipestate-wipespeed*dt
             if wipestate<=0 then
                 local ind=newmap
-                p[1].x=maplinks[mappath][ind].x*8
-                p[1].y=maplinks[mappath][ind].y*8
+
+                for i=1,#p do
+                    p[i].x=maplinks[mappath][ind].x*8
+                    p[i].y=maplinks[mappath][ind].y*8
+
+                    p[i].vx=0
+                    p[i].vy=0
+                end
+
                 lastx=p[1].x
                 lasty=p[1].y
-
-                p[1].vx=0
-                p[1].vy=0
 
                 cam.x=p[1].x-160
                 cam.y=p[1].y-90
@@ -779,19 +840,20 @@ function playdraw(dt)
 
     love.graphics.setColor(love.math.colorFromBytes(255,255,255))
 
-    anim:setPosition(math.floor(p[1].x-p[1].w-8),math.floor(p[1].y-24))
+    for i=1,#p do
+        p[i].anim:setPosition(math.floor(p[i].x-p[i].w-8),math.floor(p[i].y-24))
 
-    if p[1].iframes~=nil then
-        love.graphics.setColor(love.math.colorFromBytes(200,100,100))
+        if p[i].iframes~=nil then
+            love.graphics.setColor(love.math.colorFromBytes(200,100,100))
+        end
+        p[i].anim:draw()
+
+        love.graphics.setColor(love.math.colorFromBytes(255,255,255))
+        if p[i].swingtimer>0 then
+            swinganim:setPosition(p[i].swingx+p[i].swingw/8,p[i].swingy-p[i].swingh/2)
+            swinganim:draw()
+        end
     end
-    anim:draw()
-
-    love.graphics.setColor(love.math.colorFromBytes(255,255,255))
-    if p[1].swingtimer>0 then
-        swinganim:setPosition(p[1].swingx+p[1].swingw/8,p[1].swingy-p[1].swingh/2)
-        swinganim:draw()
-    end
-
 
     entlgc()
     ptclgc()
@@ -799,18 +861,22 @@ function playdraw(dt)
     --draw super foreground layer that draws in front of entities and player
     sfg:draw()
 
-    if p[1].frontbench==true then
-        outprint("press up to save",math.floor(p[1].x-60),math.floor(p[1].y-30))
+    for i=1,#p do
+        if p[i].frontbench==true then
+            outprint("press up to save",math.floor(p[1].x-60),math.floor(p[1].y-30))
+        end
     end
 
     love.graphics.origin()
 
     love.graphics.setColor(love.math.colorFromBytes(255,255,255))
-    for i=1,p[1].maxhealth do
-        love.graphics.draw(heartbase,-14+i*16,2)
-    end
-    for i=1,p[1].health do
-        love.graphics.draw(heart,-14+i*16,2)
+    for plyr=1,#p do
+        for i=1,p[plyr].maxhealth do
+            love.graphics.draw(heartbase,-14+i*16,2)
+        end
+        for i=1,p[plyr].health do
+            love.graphics.draw(heart,-14+i*16,2)
+        end
     end
 
     if savedtimer~=nil then
@@ -1117,112 +1183,112 @@ function playdraw(dt)
     end
 end
 
-function pcollision(id,dt)
+function pcollision(plyr,dt)
     local floor=math.floor
     local ceil=math.ceil
     --bonk
-    if checkSolid((p[1].x),(p[1].y-p[1].h)) and p[1].vy<0 then
-        p[1].y=ceil(p[1].y/8)*8
-        p[1].vy=0
+    if checkSolid((p[plyr].x),(p[plyr].y-p[plyr].h)) and p[plyr].vy<0 then
+        p[plyr].y=ceil(p[plyr].y/8)*8
+        p[plyr].vy=0
     end
     --land
-    if checkSolid((p[1].x),(p[1].y)) and p[1].vy>0 then
-        p[1].y=floor(p[1].y/8)*8
-        landing()
+    if checkSolid((p[plyr].x),(p[plyr].y)) and p[plyr].vy>0 then
+        p[plyr].y=floor(p[plyr].y/8)*8
+        landing(plyr)
         
     end
 
     --right col
-    if checkSolid((p[1].x+p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h+4)) 
-    or checkSolid((p[1].x+p[1].w/2+p[1].vx*dt),(p[1].y-4)) then
-        p[1].x=ceil(p[1].x/8)*8-4
-        p[1].vx=0
+    if checkSolid((p[plyr].x+p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h+4)) 
+    or checkSolid((p[plyr].x+p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-4)) then
+        p[plyr].x=ceil(p[plyr].x/8)*8-4
+        p[plyr].vx=0
     end
     --left col
-    if checkSolid((p[1].x-p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h+4)) 
-    or checkSolid((p[1].x-p[1].w/2+p[1].vx*dt),(p[1].y-4)) then
-        p[1].x=floor(p[1].x/8)*8+4
-        p[1].vx=0
+    if checkSolid((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h+4)) 
+    or checkSolid((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-4)) then
+        p[plyr].x=floor(p[plyr].x/8)*8+4
+        p[plyr].vx=0
     end
 
-    if checkDeath((p[1].x-p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h/2-2)) 
-    or checkDeath((p[1].x+p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h/2-2)) 
-    or checkDeath((p[1].x-p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h/2+6)) 
-    or checkDeath((p[1].x+p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h/2+6)) then
-        p[1].x=lastx
-        p[1].y=lasty
-        p[1].vx=0
-        p[1].vy=0
-        p[1].health=p[1].health-1
+    if checkDeath((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h/2-2)) 
+    or checkDeath((p[plyr].x+p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h/2-2)) 
+    or checkDeath((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h/2+6)) 
+    or checkDeath((p[plyr].x+p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h/2+6)) then
+        p[plyr].x=lastx
+        p[plyr].y=lasty
+        p[plyr].vx=0
+        p[plyr].vy=0
+        p[plyr].health=p[plyr].health-1
         ents={}
         hurtsfx()
         checkents()
         
     end
 
-    if checkBench((p[1].x-p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h+2)) ~= nil then
-        p[1].frontbench=true
+    if checkBench((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h+2)) ~= nil then
+        p[plyr].frontbench=true
         
-        if up() then
+        if up(plyr) then
             save()
             savedtimer=300
             clam:play()
         end
     else
-        p[1].frontbench=nil
+        p[plyr].frontbench=nil
     end
 
-    if checkDoor((p[1].x-p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h+2)) ~= nil then
+    if checkDoor((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h+2)) ~= nil then
         if leveltransition~=true then
             wipestate=255
             leveltransition=true
-            newmap=checkDoor((p[1].x-p[1].w/2+p[1].vx*dt),(p[1].y-p[1].h+2))
+            newmap=checkDoor((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h+2))
         end
     end
 
-    if p[1].iframes~=nil then
-        p[1].iframes=p[1].iframes-dt
-        if p[1].iframes<=0 then p[1].iframes=nil end
+    if p[plyr].iframes~=nil then
+        p[plyr].iframes=p[plyr].iframes-dt
+        if p[plyr].iframes<=0 then p[plyr].iframes=nil end
     end
 
-    if p[1].health<=0 then
+    if p[plyr].health<=0 then
         load()
     end
 
 end
 
-function landing()
+function landing(plyr)
     local dt=love.timer.getDelta()
-    p[1].canjump=0.05
-    p[1].vy=0
-    p[1].vx=p[1].vx*(1-3*dt)
-    p[1].float=2
-    p[1].canfloat=true
-    p[1].doublejumped=false
-    p[1].candbljmp=false
-    p[1].jumped =nil
+    p[plyr].canjump=0.05
+    p[plyr].vy=0
+    p[plyr].vx=p[plyr].vx*(1-3*dt)
+    p[plyr].float=2
+    p[plyr].canfloat=true
+    p[plyr].doublejumped=false
+    p[plyr].candbljmp=false
+    p[plyr].jumped =nil
 end
 
 function input(plyr,dt)
     local floor=math.floor
 
-    p[1].y=p[1].y+p[1].vy*dt
-    p[1].x=p[1].x+p[1].vx*dt
+    p[plyr].y=p[plyr].y+p[plyr].vy*dt
+    p[plyr].x=p[plyr].x+p[plyr].vx*dt
 
-    if down() and pstate.hascrawl==true then 
-        p[1].crouch=true
-    elseif checkSolid((p[1].x-p[1].w/2+2),(p[1].y-12))
-        or checkSolid((p[1].x+p[1].w/2-2),(p[1].y-12)) 
+    if down(plyr) and pstate.hascrawl==true then 
+        p[plyr].crouch=true
+    elseif checkSolid((p[plyr].x-p[plyr].w/2+2),(p[plyr].y-12))
+        or checkSolid((p[plyr].x+p[plyr].w/2-2),(p[plyr].y-12)) 
         and pstate.hascrawl==true then
-        p[1].crouch=true
+        p[plyr].crouch=true
     else
-        p[1].crouch=false
+        p[plyr].crouch=false
     end
 
-    if p[1].crouch==true then 
-        p[1].h = 7
+    if p[plyr].crouch==true then 
+        p[plyr].h = 7
     else
-        p[1].h = 16
+        p[plyr].h = 16
     end
 
     local rate=480 --acceleration
@@ -1233,75 +1299,75 @@ function input(plyr,dt)
         rate=rate*1.5
     end
 
-    if p[1].crouch == true 
-    and checkSolid((p[1].x),(p[1].y)) then
+    if p[plyr].crouch == true 
+    and checkSolid((p[plyr].x),(p[plyr].y)) then
         scap=scap*0.5
     end
 
-    if left()
-    and p[1].vx >-scap then
-        p[1].swingdir=-1
-        p[1].vx = p[1].vx - (rate)*dt
-        if anim:getCurrentState()~='runLeft' 
-        and p[1].crouch == false 
-        and not up() then
-            anim:setState('runLeft')
-        elseif anim:getCurrentState()~='runLeftUp' 
-        and p[1].crouch == false 
-        and up() then
-            anim:setState('runLeftUp')
+    if left(plyr)
+    and p[plyr].vx >-scap then
+        p[plyr].swingdir=-1
+        p[plyr].vx = p[plyr].vx - (rate)*dt
+        if p[plyr].anim:getCurrentState()~='runLeft' 
+        and p[plyr].crouch == false 
+        and not up(plyr) then
+            p[plyr].anim:setState('runLeft')
+        elseif p[plyr].anim:getCurrentState()~='runLeftUp' 
+        and p[plyr].crouch == false 
+        and up(plyr) then
+            p[plyr].anim:setState('runLeftUp')
         end
-        p[1].dir="left"
-    elseif right() 
-    and p[1].vx < scap then
-        p[1].swingdir=1
-        p[1].vx = p[1].vx + (rate)*dt 
-        if anim:getCurrentState()~='runRight' 
-        and p[1].crouch == false 
-        and not up() then
-            anim:setState('runRight')
-        elseif anim:getCurrentState()~='runRightUp' 
-        and p[1].crouch == false 
-        and up() then
-            anim:setState('runRightUp')
+        p[plyr].dir="left"
+    elseif right(plyr) 
+    and p[plyr].vx < scap then
+        p[plyr].swingdir=1
+        p[plyr].vx = p[plyr].vx + (rate)*dt 
+        if p[plyr].anim:getCurrentState()~='runRight' 
+        and p[plyr].crouch == false 
+        and not up(plyr) then
+            p[plyr].anim:setState('runRight')
+        elseif p[plyr].anim:getCurrentState()~='runRightUp' 
+        and p[plyr].crouch == false 
+        and up(plyr) then
+            p[plyr].anim:setState('runRightUp')
         end
-        p[1].dir="right"
-    elseif p[1].crouch == true then
-        p[1].vx=p[1].vx*(1-3*dt)
+        p[plyr].dir="right"
+    elseif p[plyr].crouch == true then
+        p[plyr].vx=p[plyr].vx*(1-3*dt)
     else
-        p[1].vx=p[1].vx*(1-3*dt)
+        p[plyr].vx=p[plyr].vx*(1-3*dt)
     end
 
-    if jump() and p[1].canjump>0 then  
-        p[1].vy=-180
-        p[1].canjump=p[1].canjump-dt*2
-        p[1].jumped = true
-    elseif jump() then
-        p[1].vy=p[1].vy+500*dt
-    elseif p[1].vy<0 then
-        p[1].vy=p[1].vy+1200*dt
-        p[1].canjump=0
+    if jump(plyr) and p[plyr].canjump>0 then  
+        p[plyr].vy=-180
+        p[plyr].canjump=p[plyr].canjump-dt*2
+        p[plyr].jumped = true
+    elseif jump(plyr) then
+        p[plyr].vy=p[plyr].vy+500*dt
+    elseif p[plyr].vy<0 then
+        p[plyr].vy=p[plyr].vy+1200*dt
+        p[plyr].canjump=0
     else 
-        p[1].vy=p[1].vy+550*dt
+        p[plyr].vy=p[plyr].vy+550*dt
     end
 
-    if not jump() and p[1].jumped ~=nil 
+    if not jump(plyr) and p[plyr].jumped ~=nil 
     and pstate.hasdbljmp == true then
-        p[1].candbljmp=true
+        p[plyr].candbljmp=true
     end
 
-    if jump() 
-    and p[1].canjump<=0 
-    and p[1].candbljmp==true 
-    and p[1].doublejumped==false then
-        p[1].canjump=0.05
-        sp_ptc(p[1].x-p[1].w/2,p[1].y,0,120,0.3,ring1)
-        sp_ptc(p[1].x,p[1].y,-60,120,0.3,pix)
-        sp_ptc(p[1].x,p[1].y,-40,120,0.3,pix)
-        sp_ptc(p[1].x,p[1].y,40,120,0.3,pix)
-        sp_ptc(p[1].x,p[1].y,60,120,0.3,pix)
-        p[1].candbljmp=false
-        p[1].doublejumped=true 
+    if jump(plyr) 
+    and p[plyr].canjump<=0 
+    and p[plyr].candbljmp==true 
+    and p[plyr].doublejumped==false then
+        p[plyr].canjump=0.05
+        sp_ptc(p[plyr].x-p[plyr].w/2,p[plyr].y,0,120,0.3,ring1)
+        sp_ptc(p[plyr].x,p[plyr].y,-60,120,0.3,pix)
+        sp_ptc(p[plyr].x,p[plyr].y,-40,120,0.3,pix)
+        sp_ptc(p[plyr].x,p[plyr].y,40,120,0.3,pix)
+        sp_ptc(p[plyr].x,p[plyr].y,60,120,0.3,pix)
+        p[plyr].candbljmp=false
+        p[plyr].doublejumped=true 
         
         local num=math.random(1,7)
         if num==1 then jmp1:play()
@@ -1316,20 +1382,20 @@ function input(plyr,dt)
     --float
     if float() 
     and pstate.hasfloat == true 
-    and p[1].canfloat==true
-    and p[1].float>0 then
+    and p[plyr].canfloat==true
+    and p[plyr].float>0 then
         flsfx:play()
-        p[1].float = p[1].float-dt
-        p[1].vy=0
-        p[1].trigfloat=0
-    elseif p[1].trigfloat~=nil then
-        p[1].float=0
-        p[1].trigfloat=nil
+        p[plyr].float = p[plyr].float-dt
+        p[plyr].vy=0
+        p[plyr].trigfloat=0
+    elseif p[plyr].trigfloat~=nil then
+        p[plyr].float=0
+        p[plyr].trigfloat=nil
     end
 
     if pstate.hasswing==true then
-        if swing() and up() and p[1].swingtimer<=0 then
-            p[1].swingtimer=p[1].swingdelay
+        if swing(plyr) and up(plyr) and p[plyr].swingtimer<=0 then
+            p[plyr].swingtimer=p[plyr].swingdelay
             if swinganim:getCurrentState()~="up" then
                 swinganim:setState("up")
             end
@@ -1338,10 +1404,10 @@ function input(plyr,dt)
             elseif num==2 then sw2:play()
             elseif num==3 then sw3:play() end
 
-        elseif swing() and not up() and not down() and p[1].swingtimer<=0 then
+        elseif swing(plyr) and not up(plyr) and not down(plyr) and p[plyr].swingtimer<=0 then
             --Left/Right Swings
-            p[1].swingtimer=p[1].swingdelay
-            if p[1].swingdir>0 then
+            p[plyr].swingtimer=p[plyr].swingdelay
+            if p[plyr].swingdir>0 then
                 if swinganim:getCurrentState()~="right" then
                     swinganim:setState("right")
                 end
@@ -1359,187 +1425,67 @@ function input(plyr,dt)
 
     --keep setting position as long as state is active
     if swinganim:getCurrentState()=="left" then
-        p[1].swingx=p[1].x-6-p[1].swingw
-        p[1].swingy=p[1].y-p[1].h/2
+        p[plyr].swingx=p[plyr].x-6-p[plyr].swingw
+        p[plyr].swingy=p[plyr].y-p[plyr].h/2
     elseif swinganim:getCurrentState()=="right" then
-        p[1].swingx=p[1].x+4
-        p[1].swingy=p[1].y-p[1].h/2
+        p[plyr].swingx=p[plyr].x+4
+        p[plyr].swingy=p[plyr].y-p[plyr].h/2
     else
-        p[1].swingx=p[1].x-p[1].swingw/2
-        p[1].swingy=p[1].y-p[1].h*1.5
+        p[plyr].swingx=p[plyr].x-p[plyr].swingw/2
+        p[plyr].swingy=p[plyr].y-p[plyr].h*1.5
     end
 
-    if p[1].swingtimer>0 then p[1].swingtimer=p[1].swingtimer-dt end
+    if p[plyr].swingtimer>0 then p[plyr].swingtimer=p[plyr].swingtimer-dt end
 
 
-    if p[1].frontbench==true then
-        if anim:getCurrentState()~='sleep' 
-        and anim:getCurrentState()~='sleepidle' then
-            anim:setState("sleep")
+    if p[plyr].frontbench==true then
+        if p[plyr].anim:getCurrentState()~='sleep' 
+        and p[plyr].anim:getCurrentState()~='sleepidle' then
+            p[plyr].anim:setState("sleep")
         end
-        anim:unpause()
-    elseif p[1].crouch==true then
-        if p[1].dir=="left" then
-            if anim:getCurrentState()~='crouchLeft' then
-                anim:setState('crouchLeft')
+        p[plyr].anim:unpause()
+    elseif p[plyr].crouch==true then
+        if p[plyr].dir=="left" then
+            if p[plyr].anim:getCurrentState()~='crouchLeft' then
+                p[plyr].anim:setState('crouchLeft')
             end
         else
-            if anim:getCurrentState()~='crouchRight' then
-                anim:setState('crouchRight')
+            if p[plyr].anim:getCurrentState()~='crouchRight' then
+                p[plyr].anim:setState('crouchRight')
             end
         end
 
-        if math.abs(p[1].vx)<4 then
-            anim:pause()
+        if math.abs(p[plyr].vx)<4 then
+            p[plyr].anim:pause()
         else
-            anim:unpause()
+            p[plyr].anim:unpause()
         end
-    elseif not checkSolid((p[1].x),(p[1].y+4)) then
-        anim:unpause()
-        if anim:getCurrentState()~='jumpRight' 
-        and p[1].dir=="right" then
-            anim:setState("jumpRight")
-        elseif anim:getCurrentState()~='jumpLeft' 
-        and p[1].dir=="left" then
-            anim:setState("jumpLeft")
+    elseif not checkSolid((p[plyr].x),(p[plyr].y+4)) then
+        p[plyr].anim:unpause()
+        if p[plyr].anim:getCurrentState()~='jumpRight' 
+        and p[plyr].dir=="right" then
+            p[plyr].anim:setState("jumpRight")
+        elseif p[plyr].anim:getCurrentState()~='jumpLeft' 
+        and p[plyr].dir=="left" then
+            p[plyr].anim:setState("jumpLeft")
         end
-    elseif not left() and not right() and not up() then
-        anim:unpause()
-        if anim:getCurrentState()~='idleRight' and p[1].dir=="right" then
-            anim:setState('idleRight')
-        elseif anim:getCurrentState()~='idleLeft' and p[1].dir=="left" then
-            anim:setState('idleLeft')
+    elseif not left(plyr) and not right(plyr) and not up(plyr) then
+        p[plyr].anim:unpause()
+        if p[plyr].anim:getCurrentState()~='idleRight' and p[plyr].dir=="right" then
+            p[plyr].anim:setState('idleRight')
+        elseif p[plyr].anim:getCurrentState()~='idleLeft' and p[plyr].dir=="left" then
+            p[plyr].anim:setState('idleLeft')
         end
-    elseif not left() and not right() and up() then
-        anim:unpause()
-        if anim:getCurrentState()~='idleRightUp' and p[1].dir=="right" then
-            anim:setState('idleRightUp')
-        elseif anim:getCurrentState()~='idleLeftUp' and p[1].dir=="left" then
-            anim:setState('idleLeftUp')
+    elseif not left(plyr) and not right(plyr) and up(plyr) then
+        p[plyr].anim:unpause()
+        if p[plyr].anim:getCurrentState()~='idleRightUp' and p[plyr].dir=="right" then
+            p[plyr].anim:setState('idleRightUp')
+        elseif p[plyr].anim:getCurrentState()~='idleLeftUp' and p[plyr].dir=="left" then
+            p[plyr].anim:setState('idleLeftUp')
         end
     end
 
 end
-
-local active
-function love.gamepadpressed(joystick, button)
-    if joystick == active then
-        return
-    end
-    active = joystick
-    local name = joystick:getName()
-    local index = joystick:getID()
-    print(string.format("Changing active gamepad to #%d '%s'.", index, name))
-end
-function love.joystickaxis(joystick, button)
-    if joystick == active then
-        return
-    end
-    active = joystick
-    local name = joystick:getName()
-    local index = joystick:getID()
-    print(string.format("Changing active gamepad to #%d '%s'.", index, name))
-end
-
---inputs
-
-function down()
-    if love.keyboard.isDown("down") then
-        return true
-    end
-    if not active then return end
-    if active:isGamepadDown({"dpdown"}) 
-    or active:getGamepadAxis("lefty")>0.5 then
-        return true
-    end
-end
-
-function up()
-    if love.keyboard.isDown("up") then
-        return true
-    end
-    if not active then return end
-    if active:isGamepadDown({"dpup"}) 
-    or active:getGamepadAxis("lefty")<-0.5 then
-        return true
-    end
-end
-
-function left()
-    if love.keyboard.isDown("left") then
-        return true
-    end
-
-    if not active then return false end
-    if active:isGamepadDown({"dpleft"}) 
-    or active:getGamepadAxis("leftx")<-0.5 then
-        return true
-    end
-end
-
-function right()
-    if love.keyboard.isDown("right") then
-        return true
-    end
-    if not active then return end
-    if active:isGamepadDown({"dpright"}) 
-    or active:getGamepadAxis("leftx")>0.5 then
-        return true
-    end
-end
-
-function jump()
-    if love.keyboard.isDown("z") then
-        return true
-    end
-
-    if not active then return end
-    if active:isGamepadDown({"a"}) then
-        return true
-    end
-end
-
-function run()
-    if love.keyboard.isDown("x") then
-        return true
-    end
-    if not active then return end
-    if active:getGamepadAxis("triggerright")>0 then
-        return true
-    end
-end
-
-function float()
-    if love.keyboard.isDown("s") then
-        return true
-    end
-    if not active then return end
-    if active:getGamepadAxis("triggerleft")>0 then
-        return true
-    end
-end
-
-function swing()
-
-    if love.keyboard.isDown("a") then
-        return true
-    end
-    if not active then return end
-    if active:isGamepadDown("x") then
-        return true
-    end
-end
-
-function trigpause()
-    if love.keyboard.isDown("escape") then
-        return true
-    end
-    if not active then return end
-    if active:isGamepadDown("start") then
-        return true
-    end
-end
-
 
 function checkSolid(tx,ty)
     local gid = terrain:getTileAtGridPosition(math.floor(tx/8), math.floor(ty/8))

@@ -1,98 +1,133 @@
---inputs
+--input
 
-function down()
-    if love.keyboard.isDown("down") then
+keymap={jump="z",
+        run="x",
+        float="s",
+        swing="a",
+        pause="escape",
+
+        up="up",
+        down="down",
+        left="left",
+        right="right"}
+
+joymap={jump="a",
+        runaxis="triggerright",
+        runbtn="x",
+        floataxis="triggerleft",
+        floatbtn="y",
+        swing="x",
+
+        pause="start",
+
+        up="dpup",
+        down="dpdown",
+        left="dpleft",
+        right="dpright"}
+
+function down(plyr)
+    if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.down) then
         return true
     end
-    if not active then return end
-    if active:isGamepadDown({"dpdown"}) 
-    or active:getGamepadAxis("lefty")<-0.5 then
+    if not p[plyr].joystick then return end
+    if p[plyr].joystick:isGamepadDown({joymap.down}) 
+    or p[plyr].joystick:getGamepadAxis("lefty")<-0.5 then
         return true
     end
 end
 
-function up()
-    if love.keyboard.isDown("up") then
+function up(plyr)
+    if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.up) then
         return true
     end
-    if not active then return end
-    if active:isGamepadDown({"dpup"}) 
-    or active:getGamepadAxis("lefty")>0.5 then
-        return true
-    end
-end
-
-function left()
-    if love.keyboard.isDown("left") then
-        return true
-    end
-
-    if not active then return false end
-    if active:isGamepadDown({"dpleft"}) 
-    or active:getGamepadAxis("leftx")<-0.5 then
+    if not p[plyr].joystick then return end
+    if p[plyr].joystick:isGamepadDown({joymap.up}) 
+    or p[plyr].joystick:getGamepadAxis("lefty")>0.5 then
         return true
     end
 end
 
-function right()
-    if love.keyboard.isDown("right") then
+function left(plyr)
+    if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.left) then
         return true
     end
-    if not active then return end
-    if active:isGamepadDown({"dpright"}) 
-    or active:getGamepadAxis("leftx")>0.5 then
+
+    if not p[plyr].joystick then return false end
+    if p[plyr].joystick:isGamepadDown({joymap.left}) 
+    or p[plyr].joystick:getGamepadAxis("leftx")<-0.5 then
         return true
     end
 end
 
-function jump()
-    if love.keyboard.isDown("z") then
+function right(plyr)
+    if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.right) then
         return true
     end
-
-    if not active then return end
-    if active:isGamepadDown({"a"}) then
-        return true
-    end
-end
-
-function run()
-    if love.keyboard.isDown("x") then
-        return true
-    end
-    if not active then return end
-    if active:getGamepadAxis("triggerright")>0 then
+    if not p[plyr].joystick then return end
+    if p[plyr].joystick:isGamepadDown({joymap.right}) 
+    or p[plyr].joystick:getGamepadAxis("leftx")>0.5 then
         return true
     end
 end
 
-function float()
-    if love.keyboard.isDown("s") then
+function jump(plyr)
+    if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.jump) then
         return true
     end
-    if not active then return end
-    if active:getGamepadAxis("triggerleft")>0 then
+
+    if not p[plyr].joystick then return end
+    if p[plyr].joystick:isGamepadDown({"a"}) then
         return true
     end
 end
 
-function swing()
-
-    if love.keyboard.isDown("a") then
+function run(plyr)
+    if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.run) then
         return true
     end
-    if not active then return end
-    if active:isGamepadDown("x") then
+    if not p[plyr].joystick then return end
+    if p[plyr].joystick:isGamepadDown({joymap.runbtn}) 
+    or p[plyr].joystick:getGamepadAxis(joymap.runaxis)>0 then
         return true
     end
 end
 
-function trigpause()
-    if love.keyboard.isDown("escape") then
+function float(plyr)
+    if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.float) then
         return true
     end
-    if not active then return end
-    if active:isGamepadDown("start") then
+    if not p[plyr].joystick then return end
+    if p[plyr].joystick:isGamepadDown({joymap.floatbtn}) 
+    or p[plyr].joystick:getGamepadAxis(joymap.floataxis)>0 then
+        return true
+    end
+end
+
+function swing(plyr)
+    if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.swing) then
+        return true
+    end
+    if not p[plyr].joystick then return end
+    if p[plyr].joystick:isGamepadDown(joymap.swing) then
+        return true
+    end
+end
+
+function trigpause(plyr)
+        if not plyr then plyr=1 end
+    if love.keyboard.isDown(keymap.pause) then
+        return true
+    end
+    if not p[plyr].joystick then return end
+    if p[plyr].joystick:isGamepadDown(joymap.pause) then
         return true
     end
 end
