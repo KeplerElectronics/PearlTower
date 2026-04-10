@@ -1275,7 +1275,11 @@ function landing(plyr)
     local dt=getDT()
     p[plyr].canjump=0.05
     p[plyr].vy=0
-    p[plyr].vx=p[plyr].vx*(1-3*dt)
+    local offset = (1-3*dt)
+    if not left(plyr) and not right(plyr) then
+        offset = (1-5*dt)
+    end 
+    p[plyr].vx=p[plyr].vx*offset
     p[plyr].float=2
     p[plyr].canfloat=true
     p[plyr].doublejumped=false
@@ -1603,18 +1607,20 @@ function entfuncs.dbljmp_l(id)
 
     ents[id].y=ents[id].y-math.sin(ents[id].ct*2)*10*dt
 
-    if hitbox(ents[id].x,ents[id].y,16,16,p[1].x,p[1].y-p[1].h/2) then
-        pstate.hasdbljmp=true
-        collectanim=true
-        handy=52-17*3
-        pearly=handy
-        collected=jumppearl
-        pearltx=-42
-        pearlty=52-17*3
-        colstr="Collected doublejump! You can now jump twice!"
-        save()
-        table.remove(ents,id)
-        return
+    for plyr=1,#p do
+        if hitbox(ents[id].x,ents[id].y,16,16,p[plyr].x,p[plyr].y-p[plyr].h/2) then
+            pstate.hasdbljmp=true
+            collectanim=true
+            handy=52-17*3
+            pearly=handy
+            collected=jumppearl
+            pearltx=-42
+            pearlty=52-17*3
+            colstr="Collected doublejump! You can now jump twice!"
+            save()
+            table.remove(ents,id)
+            return
+        end
     end
 
     love.graphics.draw(jumppearl,ents[id].x,ents[id].y)
@@ -1635,18 +1641,20 @@ function entfuncs.run_l(id)
 
     ents[id].y=ents[id].y-math.sin(ents[id].ct*2)*10*dt
 
-    if hitbox(ents[id].x,ents[id].y,16,16,p[1].x,p[1].y-p[1].h/2) then
-        pstate.hasrun=true
-        collectanim=true
-        handy=52-17*4
-        pearly=handy
-        collected=runpearl
-        pearltx=-42
-        pearlty=52-17*4
-        colstr="Collected run! Hold x(Right Trigger) to run!"
-        save()
-        table.remove(ents,id)
-        return
+    for plyr=1,#p do
+        if hitbox(ents[id].x,ents[id].y,16,16,p[plyr].x,p[plyr].y-p[plyr].h/2) then
+            pstate.hasrun=true
+            collectanim=true
+            handy=52-17*4
+            pearly=handy
+            collected=runpearl
+            pearltx=-42
+            pearlty=52-17*4
+            colstr="Collected run! Hold x(Right Trigger) to run!"
+            save()
+            table.remove(ents,id)
+            return
+        end
     end
 
     love.graphics.draw(runpearl,ents[id].x,ents[id].y)
@@ -1667,18 +1675,20 @@ function entfuncs.float_l(id)
 
     ents[id].y=ents[id].y-math.sin(ents[id].ct*2)*10*dt
 
-    if hitbox(ents[id].x,ents[id].y,16,16,p[1].x,p[1].y-p[1].h/2) then
-        pstate.hasfloat=true
-        collectanim=true
-        handy=52-17*2
-        pearly=handy
-        collected=floatpearl
-        pearltx=-42
-        pearlty=52-17*2
-        colstr="Collected float! Hold S(Left Trigger) to float!"
-        save()
-        table.remove(ents,id)
-        return
+    for plyr=1,#p do
+        if hitbox(ents[id].x,ents[id].y,16,16,p[plyr].x,p[plyr].y-p[plyr].h/2) then
+            pstate.hasfloat=true
+            collectanim=true
+            handy=52-17*2
+            pearly=handy
+            collected=floatpearl
+            pearltx=-42
+            pearlty=52-17*2
+            colstr="Collected float! Hold S(Left Trigger) to float!"
+            save()
+            table.remove(ents,id)
+            return
+        end
     end
 
     love.graphics.draw(floatpearl,ents[id].x,ents[id].y)
@@ -1699,18 +1709,20 @@ function entfuncs.crawl_l(id)
 
     ents[id].y=ents[id].y-math.sin(ents[id].ct*2)*10*dt
 
-    if hitbox(ents[id].x,ents[id].y,16,16,p[1].x,p[1].y-p[1].h/2) then
-        pstate.hascrawl=true
-        collectanim=true
-        handy=52-17
-        pearly=handy
-        collected=crawlpearl
-        pearltx=-42
-        pearlty=52-17
-        colstr="Collected crawl! press down to squeeze through small gaps"
-        save()
-        table.remove(ents,id)
-        return
+    for plyr=1,#p do
+        if hitbox(ents[id].x,ents[id].y,16,16,p[plyr].x,p[plyr].y-p[plyr].h/2) then
+            pstate.hascrawl=true
+            collectanim=true
+            handy=52-17
+            pearly=handy
+            collected=crawlpearl
+            pearltx=-42
+            pearlty=52-17
+            colstr="Collected crawl! press down to squeeze through small gaps"
+            save()
+            table.remove(ents,id)
+            return
+        end
     end
 
     love.graphics.draw(crawlpearl,ents[id].x,ents[id].y)
@@ -1731,18 +1743,20 @@ function entfuncs.sword_l(id)
 
     ents[id].y=ents[id].y-math.sin(ents[id].ct*2)*10*dt
 
-    if hitbox(ents[id].x,ents[id].y,16,16,p[1].x,p[1].y-p[1].h/2) then
-        pstate.hasswing=true
-        collectanim=true
-        handy=52
-        pearly=handy
-        collected=swordpearl
-        pearltx=-42
-        pearlty=52
-        colstr="Collected sword! Press A(x) to swing!"
-        save()
-        table.remove(ents,id)
-        return
+    for plyr=1,#p do
+        if hitbox(ents[id].x,ents[id].y,16,16,p[plyr].x,p[plyr].y-p[plyr].h/2) then
+            pstate.hasswing=true
+            collectanim=true
+            handy=52
+            pearly=handy
+            collected=swordpearl
+            pearltx=-42
+            pearlty=52
+            colstr="Collected sword! Press A(x) to swing!"
+            save()
+            table.remove(ents,id)
+            return
+        end
     end
 
     love.graphics.draw(swordpearl,ents[id].x,ents[id].y)
@@ -1763,13 +1777,15 @@ function entfuncs.pearl_l(id)
 
     ents[id].y=ents[id].y-math.sin(ents[id].ct*2)*10*dt
 
-    if hitbox(ents[id].x,ents[id].y,16,16,p[1].x,p[1].y-p[1].h/2) then
-        pearlsfound[mappath]=true
-        print(pearlsfound[mappath])
-        pstate.pearlcount=pstate.pearlcount+1
-        pearlsfx:play()
-        table.remove(ents,id)
-        return
+    for plyr=1,#p do
+        if hitbox(ents[id].x,ents[id].y,16,16,p[plyr].x,p[plyr].y-p[plyr].h/2) then
+            pearlsfound[mappath]=true
+            print(pearlsfound[mappath])
+            pstate.pearlcount=pstate.pearlcount+1
+            pearlsfx:play()
+            table.remove(ents,id)
+            return
+        end
     end
 
     love.graphics.draw(pearlspr,ents[id].x,ents[id].y)
@@ -1785,15 +1801,17 @@ function entfuncs.pearlRing_l(id)
 
     ents[id].y=ents[id].y-math.sin(ents[id].ct*2)*10*dt
 
-    if hitbox(ents[id].x,ents[id].y,32,32,p[1].x,p[1].y-p[1].h/2) then
-        if leveltransition~=true then
-            wipestate=255
-            leveltransition=true
-            newmap="two"
-            
+    for plyr=1,#p do
+        if hitbox(ents[id].x,ents[id].y,32,32,p[plyr].x,p[plyr].y-p[plyr].h/2) then
+            if leveltransition~=true then
+                wipestate=255
+                leveltransition=true
+                newmap="two"
+                
+            end
+            table.remove(ents,id)
+            return
         end
-        table.remove(ents,id)
-        return
     end
     pearlring:setPosition(ents[id].x-32,ents[id].y-32)
     pearlring:draw()
@@ -1851,33 +1869,37 @@ function entfuncs.rustball_l(id)
             if ents[id].iframes<=0 then ents[id].iframes=nil end
         end
 
-        local mag=dist(p[1].x,p[1].y,ents[id].x,ents[id].y)
+        local nplyr=getNearestPlayer(id)
 
-        if p[1].swingtimer>0.4 and ents[id].iframes == nil then
-            if hitbox(p[1].swingx,p[1].swingy,p[1].swingw,p[1].swingh,ents[id].x-8,ents[id].y-20) 
-            or hitbox(p[1].swingx,p[1].swingy,p[1].swingw,p[1].swingh,ents[id].x-8,ents[id].y+4) 
-            or hitbox(p[1].swingx,p[1].swingy,p[1].swingw,p[1].swingh,ents[id].x+8,ents[id].y-20) 
-            or hitbox(p[1].swingx,p[1].swingy,p[1].swingw,p[1].swingh,ents[id].x+8,ents[id].y+8) then
-                ents[id].health=ents[id].health-1
-                ents[id].vx=100*(ents[id].x+8-p[1].x)/mag
-                ents[id].vy=100*(ents[id].y+8-p[1].y)/mag
-                ents[id].iframes=1
-                splat(ents[id].x,ents[id].y-8,rustfrag1,p[1].swingdir)
-                sp_ent(ents[id].x,ents[id].y,"rustgib")
-                hitsfx()
-            end
-        else
-            if hitbox(ents[id].x-6,ents[id].y-8,12,12,p[1].x+4,p[1].y) 
-            or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[1].x+4,p[1].y-p[1].h) 
-            or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[1].x-4,p[1].y) 
-            or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[1].x-4,p[1].y-p[1].h) then
-                hurtplyr(id)
+        local mag=dist(p[nplyr].x,p[nplyr].y,ents[id].x,ents[id].y)
+
+        for plyr=1,#p do
+            if p[plyr].swingtimer>0.4 and ents[id].iframes == nil then
+                if hitbox(p[plyr].swingx,p[plyr].swingy,p[plyr].swingw,p[plyr].swingh,ents[id].x-8,ents[id].y-20) 
+                or hitbox(p[plyr].swingx,p[plyr].swingy,p[plyr].swingw,p[plyr].swingh,ents[id].x-8,ents[id].y+4) 
+                or hitbox(p[plyr].swingx,p[plyr].swingy,p[plyr].swingw,p[plyr].swingh,ents[id].x+8,ents[id].y-20) 
+                or hitbox(p[plyr].swingx,p[plyr].swingy,p[plyr].swingw,p[plyr].swingh,ents[id].x+8,ents[id].y+8) then
+                    ents[id].health=ents[id].health-1
+                    ents[id].vx=100*(ents[id].x+8-p[plyr].x)/mag
+                    ents[id].vy=100*(ents[id].y+8-p[plyr].y)/mag
+                    ents[id].iframes=1
+                    splat(ents[id].x,ents[id].y-8,rustfrag1,p[1].swingdir)
+                    sp_ent(ents[id].x,ents[id].y,"rustgib")
+                    hitsfx()
+                end
+            else
+                if hitbox(ents[id].x-6,ents[id].y-8,12,12,p[plyr].x+4,p[plyr].y) 
+                or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[plyr].x+4,p[plyr].y-p[plyr].h) 
+                or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[plyr].x-4,p[plyr].y) 
+                or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[plyr].x-4,p[plyr].y-p[plyr].h) then
+                    hurtplyr(id)
+                end
             end
         end
 
         if ents[id].health<=0 then
-            splat(ents[id].x,ents[id].y-8,rustfrag1,p[1].swingdir)
-            splat(ents[id].x,ents[id].y-8,rustfrag2,p[1].swingdir)
+            splat(ents[id].x,ents[id].y-8,rustfrag1,p[nplyr].swingdir)
+            splat(ents[id].x,ents[id].y-8,rustfrag2,p[nplyr].swingdir)
             sp_ent(ents[id].x,ents[id].y,"rustgib")
             sp_ent(ents[id].x,ents[id].y,"rustgib")
             sp_ent(ents[id].x,ents[id].y,"rustgib")
@@ -1956,6 +1978,21 @@ function entfuncs.rustwalk_l(id)
     love.graphics.draw(rustwalk,ents[id].x-4,ents[id].y-8)
 end
 
+function getNearestPlayer(id)
+    local nearest=1
+    local ndist=dist(p[1].x,p[1].y,ents[id].x,ents[id].y)
+
+    if #p>1 then
+        for plyr=2,#p do
+            if dist(p[plyr].x,p[plyr].y,ents[id].x,ents[id].y)>ndist then
+                nearest=plyr
+            end
+        end
+    end
+
+    return nearest
+end
+
 function entfuncs.walker_l(id)
     local spd=50
     if ents[id].vx==nil then
@@ -1974,7 +2011,9 @@ function entfuncs.walker_l(id)
 
     test=entcollision(id,8,16)
 
-    local mag=dist(p[1].x,p[1].y,ents[id].x,ents[id].y)
+    nplyr = getNearestPlayer(id)
+
+    local mag=dist(p[nplyr].x,p[nplyr].y,ents[id].x,ents[id].y)
 
     if test.right==true and ents[id].vx>0 then
         ents[id].vx=0
@@ -1998,30 +2037,31 @@ function entfuncs.walker_l(id)
         if ents[id].iframes<=0 then ents[id].iframes=nil end
     end
 
-
-    if p[1].swingtimer>0.4 and ents[id].iframes ==nil then
-        if hitbox(p[1].swingx,p[1].swingy,p[1].swingw,p[1].swingh,ents[id].x,ents[id].y-2) 
-        or hitbox(p[1].swingx,p[1].swingy,p[1].swingw,p[1].swingh,ents[id].x,ents[id].y-12) then
-            ents[id].health=ents[id].health-1
-            ents[id].vx=100*(ents[id].x+8-p[1].x)/mag
-            ents[id].vy=-120
-            ents[id].iframes=0.5
-            splat(ents[id].x,ents[id].y-8,rustfrag1,p[1].swingdir)
-            sp_ent(ents[id].x,ents[id].y,"rustgib")
-            hitsfx()
-        end
-    else
-        if hitbox(ents[id].x-4,ents[id].y-16,8,18,p[1].x+4,p[1].y) 
-        or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[1].x+4,p[1].y-p[1].h) 
-        or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[1].x-4,p[1].y) 
-        or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[1].x-4,p[1].y-p[1].h)then
-            hurtplyr(id)
+    for plyr=1,#p do
+        if p[plyr].swingtimer>0.4 and ents[id].iframes ==nil then
+            if hitbox(p[plyr].swingx,p[plyr].swingy,p[plyr].swingw,p[plyr].swingh,ents[id].x,ents[id].y-2) 
+            or hitbox(p[plyr].swingx,p[plyr].swingy,p[plyr].swingw,p[plyr].swingh,ents[id].x,ents[id].y-12) then
+                ents[id].health=ents[id].health-1
+                ents[id].vx=100*(ents[id].x+8-p[plyr].x)/mag
+                ents[id].vy=-120
+                ents[id].iframes=0.5
+                splat(ents[id].x,ents[id].y-8,rustfrag1,p[plyr].swingdir)
+                sp_ent(ents[id].x,ents[id].y,"rustgib")
+                hitsfx()
+            end
+        else
+            if hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x+4,p[plyr].y) 
+            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x+4,p[plyr].y-p[plyr].h) 
+            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x-4,p[plyr].y) 
+            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x-4,p[plyr].y-p[plyr].h)then
+                hurtplyr(id)
+            end
         end
     end
 
     if ents[id].health<=0 then
-        splat(ents[id].x,ents[id].y-8,rustfrag1,p[1].swingdir)
-        splat(ents[id].x,ents[id].y-8,rustfrag2,p[1].swingdir)
+        splat(ents[id].x,ents[id].y-8,rustfrag1,p[nplyr].swingdir)
+        splat(ents[id].x,ents[id].y-8,rustfrag2,p[nplyr].swingdir)
         sp_ent(ents[id].x,ents[id].y,"rustgib")
         sp_ent(ents[id].x,ents[id].y,"rustgib")
         table.remove(ents,id)
@@ -2058,11 +2098,13 @@ function entfuncs.walker_trig_l(id)
 end
 
 function entfuncs.upbounce_l(id)
-    if hitbox(ents[id].x-4,ents[id].y+2,16,8,p[1].x,p[1].y) then
-        p[1].vy=-400
-        p[1].jumped=true
-        p[1].doublejumped=false
-        bouncesfx()
+    for plyr=1,#p do
+        if hitbox(ents[id].x-4,ents[id].y+2,16,8,p[plyr].x,p[plyr].y) then
+            p[plyr].vy=-400
+            p[plyr].jumped=true
+            p[plyr].doublejumped=false
+            bouncesfx()
+        end
     end
     rustslimeanim:setPosition(ents[id].x,ents[id].y)
     rustslimeanim:setRotation(0)
@@ -2070,12 +2112,14 @@ function entfuncs.upbounce_l(id)
 end
 
 function entfuncs.leftbounce_l(id)
-    if hitbox(ents[id].x-4,ents[id].y+10,16,18,p[1].x,p[1].y) then
-        p[1].vx=-300
-        p[1].vy=-200
-        p[1].jumped=true
-        p[1].doublejumped=false
-        bouncesfx()
+    for plyr=1,#p do
+        if hitbox(ents[id].x-4,ents[id].y+10,16,18,p[plyr].x,p[plyr].y) then
+            p[plyr].vx=-300
+            p[plyr].vy=-200
+            p[plyr].jumped=true
+            p[plyr].doublejumped=false
+            bouncesfx()
+        end
     end
     rustslimeanim:setPosition(ents[id].x,ents[id].y+8)
     rustslimeanim:setRotation(-math.pi/2)
@@ -2083,12 +2127,14 @@ function entfuncs.leftbounce_l(id)
 end
 
 function entfuncs.rightbounce_l(id)
-    if hitbox(ents[id].x-4,ents[id].y+10,16,20,p[1].x,p[1].y) then
-        p[1].vx=300
-        p[1].vy=-200
-        p[1].jumped=true
-        p[1].doublejumped=false
-        bouncesfx()
+    for plyr=1,#p do
+        if hitbox(ents[id].x-4,ents[id].y+10,16,20,p[plyr].x,p[plyr].y) then
+            p[plyr].vx=300
+            p[plyr].vy=-200
+            p[plyr].jumped=true
+            p[plyr].doublejumped=false
+            bouncesfx()
+        end
     end
     rustslimeanim:setPosition(ents[id].x+8,ents[id].y)
     rustslimeanim:setRotation(math.pi/2)
@@ -2225,19 +2271,20 @@ function platlogic(id,left,right)
     end
     
     local dt=getDT()
+    for plyr=1, #p do
+        if (p[plyr].x+p[plyr].vx*dt+p[plyr].w/2) < ents[id].x+right
+        and (p[plyr].x+p[plyr].vx*dt+p[plyr].w/2) > ents[id].x+left
+        and p[plyr].y+8+p[plyr].vy*dt > ents[id].y 
+        and p[plyr].y+p[plyr].vy*dt < ents[id].y
+        and p[plyr].vy>0  then
+            landing(plyr)
 
-    if (p[1].x+p[1].vx*dt+p[1].w/2) < ents[id].x+right
-    and (p[1].x+p[1].vx*dt+p[1].w/2) > ents[id].x+left
-    and p[1].y+8+p[1].vy*dt > ents[id].y 
-    and p[1].y+p[1].vy*dt < ents[id].y
-    and p[1].vy>0  then
-        landing()
+            p[plyr].x = p[plyr].x+ents[id].vx
+            p[plyr].y = ents[id].y-7+ents[id].vy
 
-        p[1].x = p[1].x+ents[id].vx
-        p[1].y = ents[id].y-7+ents[id].vy
-
-        return true
-    end                    
+            return true
+        end   
+    end                 
 end
 
 function death()
@@ -2258,22 +2305,24 @@ function resdraw()
 end
 
 function hurtplyr(id)
-    if p[1].iframes==nil then
-        p[1].health=p[1].health-1
-        if p[1].x<ents[id].x then
-            p[1].vx=ents[id].vx*4-200
-        else
-            p[1].vx=ents[id].vx*4+200
-        end
+    for plyr=1,#p do
+        if p[plyr].iframes==nil then
+            p[plyr].health=p[plyr].health-1
+            if p[plyr].x<ents[id].x then
+                p[plyr].vx=ents[id].vx*4-200
+            else
+                p[plyr].vx=ents[id].vx*4+200
+            end
 
-        if p[1].y<ents[id].y then
-            p[1].vy=ents[id].vy*4-100
-        else
-            p[1].vy=ents[id].vy*4+100
-        end
+            if p[plyr].y<ents[id].y then
+                p[plyr].vy=ents[id].vy*4-100
+            else
+                p[plyr].vy=ents[id].vy*4+100
+            end
 
-        p[1].iframes=0.7
-        hurtsfx()
+            p[plyr].iframes=0.7
+            hurtsfx()
+        end
     end
 end
 
