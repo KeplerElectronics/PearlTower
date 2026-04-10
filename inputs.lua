@@ -32,7 +32,7 @@ function down(plyr)
     end
     if not p[plyr].joystick then return end
     if p[plyr].joystick:isGamepadDown({joymap.down}) 
-    or p[plyr].joystick:getGamepadAxis("lefty")<-0.5 then
+    or p[plyr].joystick:getGamepadAxis("lefty")>0.5 then
         return true
     end
 end
@@ -44,7 +44,7 @@ function up(plyr)
     end
     if not p[plyr].joystick then return end
     if p[plyr].joystick:isGamepadDown({joymap.up}) 
-    or p[plyr].joystick:getGamepadAxis("lefty")>0.5 then
+    or p[plyr].joystick:getGamepadAxis("lefty")<-0.5 then
         return true
     end
 end

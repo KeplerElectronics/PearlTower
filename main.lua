@@ -546,18 +546,27 @@ function love.gamepadpressed(joystick, button)
     end
 
     --if joystick is not in use:
-    for i=1,#p do
-        if p[i].joystick==nil then
-            p[i].joystick = joystick
-            local name = joystick:getName()
-            local index = joystick:getID()
-            print(string.format("Changing player ",i," gamepad to #%d '%s'.", index, name))
-            return
+    
+        for i=1,#p do
+            if p[i].joystick==nil then
+                p[i].joystick = joystick
+                local name = joystick:getName()
+                local index = joystick:getID()
+                print(string.format("Changing player ",i," gamepad to #%d '%s'.", index, name))
+                return
+            end
         end
+    if gamestate=="play" then
+        --if player does not exist
+        animation='Sprites/PlayerAnim2.lua'
+        if #p==2 then
+            animation='Sprites/PlayerAnim3.lua'
+        elseif #p==3 then
+            animation='Sprites/PlayerAnim4.lua'
+        end
+        playeradd(p[1].x-30,p[1].y,animation)
+        p[#p].joystick=joystick
     end
-    --if player does not exist:
-    playeradd(p[1].x-30,p[1].y,'Sprites/PlayerAnim2.lua')
-    p[#p].joystick=joystick
 end
 
 function love.joystickaxis(joystick, button)
@@ -569,18 +578,27 @@ function love.joystickaxis(joystick, button)
     end
 
     --if joystick is not in use:
-    for i=1,#p do
-        if p[i].joystick==nil then
-            p[i].joystick = joystick
-            local name = joystick:getName()
-            local index = joystick:getID()
-            print(string.format("Changing player ",i," gamepad to #%d '%s'.", index, name))
-            return
+    
+        for i=1,#p do
+            if p[i].joystick==nil then
+                p[i].joystick = joystick
+                local name = joystick:getName()
+                local index = joystick:getID()
+                print(string.format("Changing player ",i," gamepad to #%d '%s'.", index, name))
+                return
+            end
         end
+    if gamestate=="play" then
+        --if player does not exist
+        animation='Sprites/PlayerAnim2.lua'
+        if #p==2 then
+            animation='Sprites/PlayerAnim3.lua'
+        elseif #p==3 then
+            animation='Sprites/PlayerAnim4.lua'
+        end
+        playeradd(p[1].x-30,p[1].y,animation)
+        p[#p].joystick=joystick
     end
-    --if player does not exist:
-    playeradd(p[1].x-30,p[1].y,'Sprites/PlayerAnim2.lua')
-    p[#p].joystick=joystick
 end
 
 
@@ -1398,7 +1416,7 @@ function input(plyr,dt)
     end 
 
     --float
-    if float() 
+    if float(plyr) 
     and pstate.hasfloat == true 
     and p[plyr].canfloat==true
     and p[plyr].float>0 then
