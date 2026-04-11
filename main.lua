@@ -68,13 +68,15 @@ p={}
 pstate={hasrun=false, hasfloat=false, hasdbljmp=false, hascrawl=false, hasswing=false, pearlcount=0}
 
 function playeradd(x,y,animation)
-    local player={  x=x,y=y,w=8,h=16,vx=0,vy=0,dir="right",canjump=0,maxhealth=6,health=6,
+    local player={  x=x,y=y,w=8,h=16,vx=0,vy=0,dir="right",canjump=0,maxhealth=1,health=6,
                     crouch=false,canfloat=false, float=0,candbljmp=false,doublejumped=false, 
                     swingtimer=0,swingdir=1, swinglen=28, swingdelay=0.5, swingx=10,swingy=10,swingw=20,swingh=20,anim=LoveAnimation.new(animation);}
     table.insert(p,player)
 end
 
 playeradd(-24*8,-12,'Sprites/PlayerAnim.lua')
+
+local deathspr={love.graphics.newImage("Sprites/p1death.png")}
 
 local lastx=0
 local lasty=0
@@ -200,7 +202,7 @@ local transition_len=4
 local current_track=1
 local new_track=1
 
-local mus_vol=1
+local mus_vol=0
 
 --wind:play()
 --waves:play()
@@ -636,9 +638,11 @@ function playupdate(dt)
             
 
             for i=1,#p do
-                input(i,dt)
-                pcollision(i,dt)
-                p[i].anim:update(dt)
+                if p[i].dead==nil then
+                    input(i,dt)
+                    pcollision(i,dt)
+                    p[i].anim:update(dt)
+                end
             end
 
             swinganim:update(dt)
@@ -868,17 +872,19 @@ function playdraw(dt)
     love.graphics.setColor(love.math.colorFromBytes(255,255,255))
 
     for i=1,#p do
-        p[i].anim:setPosition(math.floor(p[i].x-p[i].w-8),math.floor(p[i].y-24))
+        if p[i].dead==nil then
+            p[i].anim:setPosition(math.floor(p[i].x-p[i].w-8),math.floor(p[i].y-24))
 
-        if p[i].iframes~=nil then
-            love.graphics.setColor(love.math.colorFromBytes(200,100,100))
-        end
-        p[i].anim:draw()
+            if p[i].iframes~=nil then
+                love.graphics.setColor(love.math.colorFromBytes(200,100,100))
+            end
+            p[i].anim:draw()
 
-        love.graphics.setColor(love.math.colorFromBytes(255,255,255))
-        if p[i].swingtimer>0 then
-            swinganim:setPosition(p[i].swingx+p[i].swingw/8,p[i].swingy-p[i].swingh/2)
-            swinganim:draw()
+            love.graphics.setColor(love.math.colorFromBytes(255,255,255))
+            if p[i].swingtimer>0 then
+                swinganim:setPosition(p[i].swingx+p[i].swingw/8,p[i].swingy-p[i].swingh/2)
+                swinganim:draw()
+            end
         end
     end
 
@@ -1284,7 +1290,9 @@ function pcollision(plyr,dt)
     end
 
     if p[plyr].health<=0 then
-        load()
+        --load()
+        sp_ptc(p[plyr].x,p[plyr].y,100,-200,30,deathspr[1],6,"death")
+        p[plyr].dead=true
     end
 
 end
@@ -1557,12 +1565,13 @@ end
 
 --write a func to iterate over current room tile once and spawn ents
 
-function sp_ptc(x,y,vx,vy,l,img,w)
+function sp_ptc(x,y,vx,vy,l,img,w,ty)
+    if not ty then ty="no" end
     if not w then w=0 end
     local r=0
     ptc={
     x=x,y=y,vx=vx,vy=vy,
-    l=l,img=img,w=w,r=r
+    l=l,img=img,w=w,r=r,ty=ty
     }
 
     table.insert(ptcs,ptc)
@@ -1572,6 +1581,22 @@ function ptclgc()
     local dt=getDT()
     for i,ptc in ipairs(ptcs) do
 
+        local scl=1
+
+        if ptc.ty=="death" then
+            if ptc.scl==nil then
+                ptc.scl=1
+            end
+
+            ptc.scl=ptc.scl+dt
+
+            scl=ptc.scl
+        end
+
+        if ptc.wd==nil then
+            ptc.wd,ptc.ht=ptc.img:getDimensions()
+        end
+
         if ptc.vx ==0 and ptc.vy==0 then ptc.vy=30 end
         ptc.r=ptc.r+ptc.w*dt
         ptc.vy=ptc.vy+550*dt
@@ -1580,10 +1605,10 @@ function ptclgc()
         
         ptc.l=ptc.l-dt
         if ptc.l<0 then
-         table.remove(ptcs,i)
+            table.remove(ptcs,i)
         end
 
-        love.graphics.draw(ptc.img,ptc.x,ptc.y,ptc.r)
+        love.graphics.draw(ptc.img,ptc.x,ptc.y,ptc.r,scl,scl,ptc.wd/2,ptc.ht/2)
 
     end
 end
