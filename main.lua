@@ -63,6 +63,8 @@ local newmap=nil
 local wipedelay=0.2
 local leveltransition=false
 
+local alldead=false
+
 p={}
 
 pstate={hasrun=false, hasfloat=false, hasdbljmp=false, hascrawl=false, hasswing=false, pearlcount=0}
@@ -459,13 +461,13 @@ function load()
     if webexport==false then
         svfl=bitser.loadLoveFile("SaveFile")
     end
-    p[1].x=svfl.px
-    p[1].y=svfl.py
+
+    p={}
+    playeradd(svfl.px,svfl.py,'Sprites/PlayerAnim.lua')
+
     lastx=p[1].x
     lasty=p[1].y
-    p[1].vx=0
-    p[1].vy=0
-    p[1].health=p[1].maxhealth
+
     print("loading: "..svfl.map)
     mappath=svfl.map
     pearlsfound=svfl.prls
@@ -616,7 +618,7 @@ function playupdate(dt)
     --print(joystick:getName())
     --print(joystick:isGamepad())
     
-    if leveltransition ~=true then
+    if leveltransition ~=true and alldead==false then
         if pausetimer>0 then pausetimer = pausetimer-dt end
 
         --pause logic
@@ -636,13 +638,20 @@ function playupdate(dt)
         if paused==false then
 
             
-
+            local deadcount=1
             for i=1,#p do
                 if p[i].dead==nil then
                     input(i,dt)
                     pcollision(i,dt)
                     p[i].anim:update(dt)
+                else
+                    deadcount=deadcount+1
                 end
+            end
+
+            if deadcount>#p then
+                alldead=true
+                wipestate=255
             end
 
             swinganim:update(dt)
@@ -679,42 +688,48 @@ function playupdate(dt)
         if wipein==true then
             wipestate=wipestate-wipespeed*dt
             if wipestate<=0 then
-                local ind=newmap
+                if leveltransition==true then
+                    local ind=newmap
 
-                for i=1,#p do
-                    p[i].x=maplinks[mappath][ind].x*8
-                    p[i].y=maplinks[mappath][ind].y*8
+                    for i=1,#p do
+                        p[i].x=maplinks[mappath][ind].x*8
+                        p[i].y=maplinks[mappath][ind].y*8
 
-                    p[i].vx=0
-                    p[i].vy=0
-                end
+                        p[i].vx=0
+                        p[i].vy=0
+                    end
 
-                lastx=p[1].x
-                lasty=p[1].y
+                    lastx=p[1].x
+                    lasty=p[1].y
 
-                cam.x=p[1].x-160
-                cam.y=p[1].y-90
+                    cam.x=p[1].x-160
+                    cam.y=p[1].y-90
 
-                mappath=maplinks[mappath][ind].name
-                map = cartographer.load(mappath)
-                terrain=map.layers.Sol
-                bg=map.layers.BG
-                fg=map.layers.FG
-                sfg=map.layers.SFG
-                ents={}
-                entlayer=map.layers.Ents
-                checkents()
+                    mappath=maplinks[mappath][ind].name
+                    map = cartographer.load(mappath)
+                    terrain=map.layers.Sol
+                    bg=map.layers.BG
+                    fg=map.layers.FG
+                    sfg=map.layers.SFG
+                    ents={}
+                    entlayer=map.layers.Ents
+                    checkents()
 
-                if mapbgs[mappath]~= nil then
-                    background=love.graphics.newImage(mapbgs[mappath])
-                else 
-                    background=love.graphics.newImage("BGs/BG1.png")
-                end
+                    if mapbgs[mappath]~= nil then
+                        background=love.graphics.newImage(mapbgs[mappath])
+                    else 
+                        background=love.graphics.newImage("BGs/BG1.png")
+                    end
 
-                if mappath=="Maps/Victory.lua" then
-                    victory=true
+                    if mappath=="Maps/Victory.lua" then
+                        victory=true
+                    end
                 end
                 
+                if alldead==true then
+                    load()
+                end
+
                 wipein = false
                 wipestate=0
             end
@@ -729,6 +744,9 @@ function playupdate(dt)
                 if wipestate>255 then
                     leveltransition = false
                     wipein=true
+                    if alldead==true then
+                        alldead=false
+                    end
                     wipedelay=0.2
                 end
             end
@@ -962,7 +980,7 @@ function playdraw(dt)
         end
     end
 
-    if leveltransition == true then    
+    if leveltransition == true or alldead==true then    
         local step = 255-wipestate
         if step >0 and step<250 then
             love.graphics.setColor(love.math.colorFromBytes(0,0,0,step))
@@ -1214,6 +1232,9 @@ function playdraw(dt)
             end
         end
     end
+
+
+
 end
 
 function pcollision(plyr,dt)
@@ -2328,10 +2349,6 @@ function platlogic(id,left,right)
             return true
         end   
     end                 
-end
-
-function death()
-    load()
 end
 
 function splat(x,y,img,dir)
