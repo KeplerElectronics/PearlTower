@@ -6,6 +6,9 @@ local push = require "Libraries/push"
 local cartographer = require "Libraries/cartographer"
 local anim = require "Libraries/animation"
 local bitser=nil
+local bump=require"Libraries/bump"
+
+world=bump.newWorld(8)
 
 if webexport == false then
     bitser=require "Libraries/bitser"
@@ -16,9 +19,9 @@ local inputs=require "inputs"
 love.graphics.setDefaultFilter("nearest", "nearest") --disable blurry scaling
 local gameWidth, gameHeight = 320, 180 --fixed game resolution
 local windowWidth, windowHeight = love.window.getDesktopDimensions()
---windowWidth, windowHeight = windowWidth*0.7, windowHeight*0.7
+windowWidth, windowHeight = windowWidth*0.7, windowHeight*0.7
 
-push:setupScreen(gameWidth, gameHeight, windowWidth, windowHeight, {fullscreen = true})
+push:setupScreen(gameWidth, gameHeight, windowWidth, windowHeight, {fullscreen = false})
 
 function lerp(a,b,t) 
     local dt=getDT()
@@ -29,8 +32,6 @@ end
 monogram=love.graphics.newFont("Fonts/monogram.ttf",16)
 smoltxt=love.graphics.newFont("Fonts/tmhw.ttf",8)
 
-ents={}
-ptcs={}
 
 cam={x=-20,y=-30}
 
@@ -72,11 +73,26 @@ pstate={hasrun=false, hasfloat=false, hasdbljmp=false, hascrawl=false, hasswing=
 function playeradd(x,y,animation)
     local player={  x=x,y=y,w=8,h=16,vx=0,vy=0,dir="right",canjump=0,maxhealth=1,health=6,
                     crouch=false,canfloat=false, float=0,candbljmp=false,doublejumped=false, 
-                    swingtimer=0,swingdir=1, swinglen=28, swingdelay=0.5, swingx=10,swingy=10,swingw=20,swingh=20,anim=LoveAnimation.new(animation);}
+                    swingtimer=0,swingdir=1, swinglen=28, swingdelay=0.5, swingx=10,swingy=18,swingw=20,swingh=20,anim=LoveAnimation.new(animation);}
     table.insert(p,player)
 end
 
 playeradd(-24*8,-12,'Sprites/PlayerAnim.lua')
+
+
+ents={}
+ptcs={}
+
+function restables()
+    ents={}
+    ptcs={}
+    world=nil
+    world=bump.newWorld(8)
+    for i=1,#p do
+        world:add(p[i],p[i].x,p[i].y,p[i].w,p[i].h)
+    end
+end
+restables()
 
 local deathspr={love.graphics.newImage("Sprites/p1death.png")}
 
@@ -489,8 +505,7 @@ function load()
     sfg=map.layers.SFG
     entlayer=map.layers.Ents
 
-    ents={}
-    ptcs={}
+    restables()
 
     --spawn in ents in the dedicated ent layer
     checkents()
@@ -521,6 +536,25 @@ function checkents()
 
                 local ty = map:getTileProperty(gid, 'entity')
                 sp_ent(i*8,j*8,ty)
+            end
+        end
+    end
+    --am lazy fight me
+    checksols()
+end
+
+function checksols()
+    print("checking solids")
+    local sx,sy,fx,fy = terrain:getGridBounds()
+    local id=0
+    for i=sx,fx do
+        for j=sy,fy do
+            local gid = terrain:getTileAtGridPosition(i,j)
+            if gid ~= nil and gid ~= false 
+            and map:getTileProperty(gid, 'solid') ~= nil then
+                id=id+1
+                tab={ty="solid"}
+                world:add(tab,i*8+4,j*8+8,8,8)
             end
         end
     end
@@ -679,7 +713,7 @@ function playupdate(dt)
                 p[1].vx=0
                 p[1].vy=0
                 p[1].health=p[1].health-1
-                ents={}
+                restables()
                 hurtsfx()
                 checkents()
             end
@@ -711,7 +745,7 @@ function playupdate(dt)
                     bg=map.layers.BG
                     fg=map.layers.FG
                     sfg=map.layers.SFG
-                    ents={}
+                    restables()
                     entlayer=map.layers.Ents
                     checkents()
 
@@ -891,7 +925,7 @@ function playdraw(dt)
 
     for i=1,#p do
         if p[i].dead==nil then
-            p[i].anim:setPosition(math.floor(p[i].x-p[i].w-8),math.floor(p[i].y-24))
+            p[i].anim:setPosition(math.floor(p[i].x-p[i].w-8),math.floor(p[i].y-16))
 
             if p[i].iframes~=nil then
                 love.graphics.setColor(love.math.colorFromBytes(200,100,100))
@@ -900,7 +934,7 @@ function playdraw(dt)
 
             love.graphics.setColor(love.math.colorFromBytes(255,255,255))
             if p[i].swingtimer>0 then
-                swinganim:setPosition(p[i].swingx+p[i].swingw/8,p[i].swingy-p[i].swingh/2)
+                swinganim:setPosition(p[i].swingx+p[i].swingw/8,p[i].swingy)
                 swinganim:draw()
             end
         end
@@ -1240,7 +1274,7 @@ end
 function pcollision(plyr,dt)
     local floor=math.floor
     local ceil=math.ceil
-    --bonk
+    --[[--bonk
     if checkSolid((p[plyr].x),(p[plyr].y-p[plyr].h)) and p[plyr].vy<0 then
         p[plyr].y=ceil(p[plyr].y/8)*8
         p[plyr].vy=0
@@ -1268,7 +1302,30 @@ function pcollision(plyr,dt)
     or checkSolid((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-4)) then
         p[plyr].x=floor(p[plyr].x/8)*8+4
         p[plyr].vx=0
+    end]]
+
+
+    local playerFilter=function(item,other)
+        if other.ty=="solid" then return 'slide' end
     end
+
+    --land and walls
+    local actualX, actualY, cols, len = world:move(p[plyr], p[plyr].x+p[plyr].vx*dt,p[plyr].y+p[plyr].vy*dt,playerFilter)
+
+    for i=1,#cols do
+        if cols[i].normal.y == -1 then
+            landing(plyr)
+        end
+        if cols[i].normal.x~=0 then
+            p[plyr].vx=0
+        end
+    end
+
+    p[plyr].x=actualX
+    p[plyr].y=actualY
+
+    world:update(p[plyr],p[plyr].x,p[plyr].y,p[plyr].w,p[plyr].h)
+
 
     if checkDeath((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h/2-2)) 
     or checkDeath((p[plyr].x+p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h/2-2)) 
@@ -1279,7 +1336,7 @@ function pcollision(plyr,dt)
         p[plyr].vx=0
         p[plyr].vy=0
         p[plyr].health=p[plyr].health-1
-        ents={}
+        restables()
         hurtsfx()
         checkents()
         
@@ -1297,11 +1354,11 @@ function pcollision(plyr,dt)
         p[plyr].frontbench=nil
     end
 
-    if checkDoor((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h+2)) ~= nil then
+    if checkDoor((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h/2)) ~= nil then
         if leveltransition~=true then
             wipestate=255
             leveltransition=true
-            newmap=checkDoor((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h+2))
+            newmap=checkDoor((p[plyr].x-p[plyr].w/2+p[plyr].vx*dt),(p[plyr].y-p[plyr].h/2))
         end
     end
 
@@ -1342,8 +1399,8 @@ function input(plyr,dt)
 
     if down(plyr) and pstate.hascrawl==true then 
         p[plyr].crouch=true
-    elseif checkSolid((p[plyr].x-p[plyr].w/2+2),(p[plyr].y-12))
-        or checkSolid((p[plyr].x+p[plyr].w/2-2),(p[plyr].y-12)) 
+    elseif checkSolid((p[plyr].x-p[plyr].w/2+2),(p[plyr].y-4))
+        or checkSolid((p[plyr].x+p[plyr].w/2-2),(p[plyr].y-4)) 
         and pstate.hascrawl==true then
         p[plyr].crouch=true
     else
@@ -1404,16 +1461,16 @@ function input(plyr,dt)
     end
 
     if jump(plyr) and p[plyr].canjump>0 then  
-        p[plyr].vy=-180
+        p[plyr].vy=-100
         p[plyr].canjump=p[plyr].canjump-dt*2
         p[plyr].jumped = true
     elseif jump(plyr) then
-        p[plyr].vy=p[plyr].vy+500*dt
+        p[plyr].vy=p[plyr].vy+250*dt
     elseif p[plyr].vy<0 then
         p[plyr].vy=p[plyr].vy+1200*dt
         p[plyr].canjump=0
     else 
-        p[plyr].vy=p[plyr].vy+550*dt
+        p[plyr].vy=p[plyr].vy+300*dt
     end
 
     if not jump(plyr) and p[plyr].jumped ~=nil 
@@ -1525,7 +1582,7 @@ function input(plyr,dt)
         else
             p[plyr].anim:unpause()
         end
-    elseif not checkSolid((p[plyr].x),(p[plyr].y+4)) then
+    elseif not checkSolid((p[plyr].x),(p[plyr].y+12)) then
         p[plyr].anim:unpause()
         if p[plyr].anim:getCurrentState()~='jumpRight' 
         and p[plyr].dir=="right" then
