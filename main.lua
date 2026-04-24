@@ -727,7 +727,7 @@ function playupdate(dt)
 
                     for i=1,#p do
                         p[i].x=maplinks[mappath][ind].x*8
-                        p[i].y=maplinks[mappath][ind].y*8
+                        p[i].y=maplinks[mappath][ind].y*8-8
 
                         p[i].vx=0
                         p[i].vy=0
@@ -1414,7 +1414,7 @@ function input(plyr,dt)
     end
 
     local rate=480 --acceleration
-    local scap=120
+    local scap=60
 
     if run() and pstate.hasrun == true then
         scap=scap*1.75
