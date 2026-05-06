@@ -20,6 +20,9 @@ local windowWidth, windowHeight = love.window.getDesktopDimensions()
 
 push:setupScreen(gameWidth, gameHeight, windowWidth, windowHeight, {fullscreen = true})
 
+HUD=love.graphics.newCanvas(gameWidth/2,gameHeight/2)
+HUDScale=windowWidth/2/gameWidth
+
 function lerp(a,b,t) 
     local dt=getDT()
     return (b+(a-b)*math.exp(-t*dt))
@@ -70,7 +73,7 @@ p={}
 pstate={hasrun=false, hasfloat=false, hasdbljmp=false, hascrawl=false, hasswing=false, pearlcount=0}
 
 function playeradd(x,y,animation)
-    local player={  x=x,y=y,w=8,h=16,vx=0,vy=0,dir="right",canjump=0,maxhealth=1,health=6,
+    local player={  x=x,y=y,w=8,h=16,vx=0,vy=0,dir="right",canjump=0,maxhealth=6,health=6,
                     crouch=false,canfloat=false, float=0,candbljmp=false,doublejumped=false, 
                     swingtimer=0,swingdir=1, swinglen=28, swingdelay=0.5, swingx=10,swingy=10,swingw=20,swingh=20,anim=LoveAnimation.new(animation);}
     table.insert(p,player)
@@ -114,7 +117,10 @@ local posttransform=love.graphics.newImage("Sprites/postTransform.png")
 
 --HUD
 local heartbase=love.graphics.newImage("Sprites/Heartbase.png")
-local heart=love.graphics.newImage("Sprites/Heart.png")
+local heart={   love.graphics.newImage("Sprites/Heart.png"),
+                love.graphics.newImage("Sprites/Heart2.png"),
+                love.graphics.newImage("Sprites/Heart3.png"),
+                love.graphics.newImage("Sprites/Heart4.png"),}
 
 --particles
 local sparkle1=love.graphics.newImage("Sprites/Sparkle1.png")
@@ -232,6 +238,89 @@ if love.filesystem.getInfo("saveFile")==nil then
     menupos=2
 end
 
+local mapxy={
+    ["Maps/BoxFort.lua"]={57.99},
+    ["Maps/WarehouseClam.lua"]={74,100},
+    ["Maps/WareHouseStairs.lua"]={83,99},
+    ["Maps/WarehousePit.lua"]={94,99},
+
+    ["Maps/SwordAntechamber.lua"]={39,101},
+    ["Maps/SwordRoom.lua"]={17,92},
+
+    ["Maps/CargoYard.lua"]={122,98},
+    
+    ["Maps/Forklift.lua"]={-20,-20},
+    ["Maps/Nest1.lua"]={-20,-20},
+
+    --green hub rooms
+
+    ["Maps/HubClamGreen.lua"]={151,99},
+
+    
+    ["Maps/EntryHub.lua"]={168,85},
+
+    ["Maps/HubGate.lua"]={144,64},
+    ["Maps/DecayTop.lua"]={165,53},
+    ["Maps/BridgeEntry.lua"]={193,98},
+
+
+    --Bridge and Parking
+    ["Maps/Bridge.lua"]={226,96},
+    ["Maps/ParkingGarage.lua"]={255,95},
+
+
+    --teal
+    ["Maps/CarClamTeal.lua"]={276,96},
+    ["Maps/Float1.lua"]={287,95},
+    ["Maps/Float2.lua"]={283,132},
+    ["Maps/FloatCollect.lua"]={305,103,},
+    ["Maps/Ocean-Float.lua"]={254,140},
+
+    ["Maps/Test.lua"]={261,85},
+
+    --ocean
+    ["Maps/Test2.lua"]={223,134},
+    ["Maps/DoubleJumpPit.lua"]={202,148},
+    ["Maps/UnderseaClam.lua"]={208,129},
+
+    ["Maps/ZigZag1.lua"]={195,123},
+
+    ["Maps/OceanHovel.lua"]={-20,-20},
+    ["Maps/Crawl-Jump.lua"]={170,128},
+
+    --Vents
+    ["Maps/VentClam.lua"]={163,120},
+
+    ["Maps/Vents1.lua"]={146,131},
+
+    ["Maps/Vents2.lua"]={122,144},
+    ["Maps/CarHovel.lua"]={-20,-20},
+    ["Maps/CrawlRoom.lua"]={99,148},
+    ["Maps/FloatVent.lua"]={109,131},
+
+    ["Maps/CoreShaft.lua"]={173,110},
+
+    ["Maps/UnderBasketball2.lua"]={216,106},
+    ["Maps/UnderBasket.lua"]={227,111},
+
+    --Gym/Barracks
+    ["Maps/Basketball.lua"]={211,81},
+
+    ["Maps/GymHovel.lua"]={-20,-20},
+
+
+    ["Maps/Gym.lua"]={236,32},
+
+    ["Maps/EdgeClimb.lua"]={-20,-20},
+
+
+    ["Maps/RunRoom.lua"]={218,67},
+    ["Maps/GymClam.lua"]={209,71},
+
+    ["Maps/BarracksBed.lua"]={191,75},
+    ["Maps/Vent1.lua"]={-20,-20}
+
+}
 
 local maplinks={["Maps/BoxFort.lua"]={["one"]={name="Maps/SwordAntechamber.lua",x=38,y=-42},["two"]={name="Maps/WarehouseClam.lua",x=29,y=-40},["three"]={name="Maps/WareHouseStairs.lua",x=-6,y=-16}},
                 ["Maps/WarehouseClam.lua"]={["one"]={name="Maps/BoxFort.lua",x=30,y=-8},["two"]={name="Maps/WareHouseStairs.lua",x=5,y=-4}},
@@ -855,6 +944,21 @@ function love.draw()
     --FPS is 120 steady on my mac mini
     --love.graphics.print("Current FPS: "..tostring(love.timer.getFPS( )), 10, 10)
     push:finish()
+
+    love.graphics.setCanvas(HUD)
+    if gamestate =="play" and pausing == false and paused == false then
+        love.graphics.setColor(love.math.colorFromBytes(255,255,255))
+        for plyr=1,#p do
+            for i=1,p[plyr].maxhealth do
+                love.graphics.draw(heartbase,-14+i*16,-18+20*plyr)
+            end
+            for i=1,p[plyr].health do
+                love.graphics.draw(heart[plyr],-14+i*16,-18+20*plyr)
+            end
+        end
+    end
+    love.graphics.setCanvas()
+    love.graphics.draw(HUD,0,0,0,HUDScale,HUDScale)
 end
 
 function outprint(s,x,y)
@@ -920,15 +1024,7 @@ function playdraw(dt)
 
     love.graphics.origin()
 
-    love.graphics.setColor(love.math.colorFromBytes(255,255,255))
-    for plyr=1,#p do
-        for i=1,p[plyr].maxhealth do
-            love.graphics.draw(heartbase,-14+i*16,2)
-        end
-        for i=1,p[plyr].health do
-            love.graphics.draw(heart,-14+i*16,2)
-        end
-    end
+    
 
     if savedtimer~=nil then
         savedtimer=savedtimer-1
@@ -1068,6 +1164,10 @@ function playdraw(dt)
         resdraw()
         love.graphics.printf("<- Pearls",smoltxt,pausemap+20,5-pt,220)
         love.graphics.draw(menumap,pausemap,-pt)
+
+        if mapxy[mappath][2]~=nil then
+            love.graphics.rectangle("fill",mapxy[mappath][1]-2+pausemap,mapxy[mappath][2]-pt,3,3)
+        end
 
         if left() and exiting>=320 and pausemap>=320 and pausing==false then
             exiting=319
@@ -1359,7 +1459,7 @@ function input(plyr,dt)
     local rate=480 --acceleration
     local scap=120
 
-    if run() and pstate.hasrun == true then
+    if run(plyr) and pstate.hasrun == true then
         scap=scap*1.75
         rate=rate*1.5
     end
@@ -1947,16 +2047,18 @@ function entfuncs.rustball_l(id)
                     ents[id].vx=100*(ents[id].x+8-p[plyr].x)/mag
                     ents[id].vy=100*(ents[id].y+8-p[plyr].y)/mag
                     ents[id].iframes=1
-                    splat(ents[id].x,ents[id].y-8,rustfrag1,p[1].swingdir)
+                    splat(ents[id].x,ents[id].y-8,rustfrag1,p[plyr].swingdir)
                     sp_ent(ents[id].x,ents[id].y,"rustgib")
                     hitsfx()
                 end
             else
-                if hitbox(ents[id].x-6,ents[id].y-8,12,12,p[plyr].x+4,p[plyr].y) 
-                or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[plyr].x+4,p[plyr].y-p[plyr].h) 
-                or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[plyr].x-4,p[plyr].y) 
-                or hitbox(ents[id].x-6,ents[id].y-8,12,12,p[plyr].x-4,p[plyr].y-p[plyr].h) then
-                    hurtplyr(id)
+                if hitbox(ents[id].x-6,ents[id].y-8,12,8,p[plyr].x+3,p[plyr].y) 
+                or hitbox(ents[id].x-6,ents[id].y-8,12,8,p[plyr].x+3,p[plyr].y-p[plyr].h) 
+                or hitbox(ents[id].x-6,ents[id].y-8,12,8,p[plyr].x-3,p[plyr].y) 
+                or hitbox(ents[id].x-6,ents[id].y-8,12,8,p[plyr].x-3,p[plyr].y-p[plyr].h)
+                or hitbox(ents[id].x-6,ents[id].y-8,12,8,p[plyr].x+3,p[plyr].y-p[plyr].h/2) 
+                or hitbox(ents[id].x-6,ents[id].y-8,12,8,p[plyr].x-3,p[plyr].y-p[plyr].h/2) then
+                    hurtplyr(plyr,id)
                 end
             end
         end
@@ -1973,8 +2075,8 @@ function entfuncs.rustball_l(id)
 
         if ents[id].iframes == nil then
             if mag<80 then
-                ents[id].vx=-50*(ents[id].x+8-p[1].x)/mag
-                ents[id].vy=-50*(ents[id].y-p[1].y)/mag
+                ents[id].vx=-50*(ents[id].x+8-p[nplyr].x)/mag
+                ents[id].vy=-50*(ents[id].y-p[nplyr].y)/mag
             else
                 ents[id].vx=ents[id].vx*(1-3*dt)
                 ents[id].vy=ents[id].vy*(1-3*dt)
@@ -2028,7 +2130,7 @@ function entfuncs.rustwalk_l(id)
     ents[id].vy=ents[id].vy+550*dt
 
     if hitbox(ents[id].x-4,ents[id].y-6,8,8,p[1].x,p[1].y) then
-        hurtplyr(id)
+        hurtplyr(plyr,id)
     end
 
     local ret=entcollision(id,8,8)
@@ -2048,7 +2150,7 @@ function getNearestPlayer(id)
 
     if #p>1 then
         for plyr=2,#p do
-            if dist(p[plyr].x,p[plyr].y,ents[id].x,ents[id].y)>ndist then
+            if dist(p[plyr].x,p[plyr].y,ents[id].x,ents[id].y)<ndist then
                 nearest=plyr
             end
         end
@@ -2087,7 +2189,7 @@ function entfuncs.walker_l(id)
         --ents[id].x=ents[id].x+1
     elseif test.land==true then
         if mag<80 then
-            if p[1].x>ents[id].x then ents[id].vx=lerp(ents[id].vx,spd,10)
+            if p[nplyr].x>ents[id].x then ents[id].vx=lerp(ents[id].vx,spd,10)
             else ents[id].vx=lerp(ents[id].vx,-spd,10) end
         else
             ents[id].vx=lerp(ents[id].vx,0,10)
@@ -2114,11 +2216,11 @@ function entfuncs.walker_l(id)
                 hitsfx()
             end
         else
-            if hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x+4,p[plyr].y) 
-            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x+4,p[plyr].y-p[plyr].h) 
-            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x-4,p[plyr].y) 
-            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x-4,p[plyr].y-p[plyr].h)then
-                hurtplyr(id)
+            if hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x+3,p[plyr].y) 
+            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x+3,p[plyr].y-p[plyr].h) 
+            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x-3,p[plyr].y) 
+            or hitbox(ents[id].x-4,ents[id].y-16,8,18,p[plyr].x-3,p[plyr].y-p[plyr].h)then
+                hurtplyr(plyr,id)
             end
         end
     end
@@ -2364,25 +2466,23 @@ function resdraw()
     love.graphics.setColor(love.math.colorFromBytes(255,255,255))
 end
 
-function hurtplyr(id)
-    for plyr=1,#p do
-        if p[plyr].iframes==nil then
-            p[plyr].health=p[plyr].health-1
-            if p[plyr].x<ents[id].x then
-                p[plyr].vx=ents[id].vx*4-200
-            else
-                p[plyr].vx=ents[id].vx*4+200
-            end
-
-            if p[plyr].y<ents[id].y then
-                p[plyr].vy=ents[id].vy*4-100
-            else
-                p[plyr].vy=ents[id].vy*4+100
-            end
-
-            p[plyr].iframes=0.7
-            hurtsfx()
+function hurtplyr(plyr,id)
+    if p[plyr].iframes==nil then
+        p[plyr].health=p[plyr].health-1
+        if p[plyr].x<ents[id].x then
+            p[plyr].vx=ents[id].vx*4-200
+        else
+            p[plyr].vx=ents[id].vx*4+200
         end
+
+        if p[plyr].y<ents[id].y then
+            p[plyr].vy=ents[id].vy*4-100
+        else
+            p[plyr].vy=ents[id].vy*4+100
+        end
+
+        p[plyr].iframes=0.7
+        hurtsfx()
     end
 end
 
