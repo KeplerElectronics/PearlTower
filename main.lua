@@ -105,6 +105,7 @@ local swordpearl=love.graphics.newImage("Sprites/SwordPearl.png")
 
 --map
 local menumap=love.graphics.newImage("Sprites/Map.png")
+local headimg=love.graphics.newImage("Sprites/head.png")
 
 --menu
 local title=love.graphics.newImage("BGs/Title.png")
@@ -210,7 +211,7 @@ local transition_len=4
 local current_track=1
 local new_track=1
 
-local mus_vol=0
+local mus_vol=1
 
 --wind:play()
 --waves:play()
@@ -946,19 +947,22 @@ function love.draw()
     push:finish()
 
     love.graphics.setCanvas(HUD)
-    if gamestate =="play" and pausing == false and paused == false then
-        love.graphics.setColor(love.math.colorFromBytes(255,255,255))
-        for plyr=1,#p do
-            for i=1,p[plyr].maxhealth do
-                love.graphics.draw(heartbase,-14+i*16,-18+20*plyr)
-            end
-            for i=1,p[plyr].health do
-                love.graphics.draw(heart[plyr],-14+i*16,-18+20*plyr)
-            end
+    
+    love.graphics.setColor(love.math.colorFromBytes(255,255,255))
+    local pt=pausetimer*2*120
+    for plyr=1,#p do
+        for i=1,p[plyr].maxhealth do
+            love.graphics.draw(heartbase,-14+i*16,-18+20*plyr)
+        end
+        for i=1,p[plyr].health do
+            love.graphics.draw(heart[plyr],-14+i*16,-18+20*plyr)
         end
     end
+    
     love.graphics.setCanvas()
-    love.graphics.draw(HUD,0,0,0,HUDScale,HUDScale)
+    if gamestate =="play" and pausing == false and paused == false then
+        love.graphics.draw(HUD,0,0,0,HUDScale,HUDScale)
+    end
 end
 
 function outprint(s,x,y)
@@ -1166,7 +1170,7 @@ function playdraw(dt)
         love.graphics.draw(menumap,pausemap,-pt)
 
         if mapxy[mappath][2]~=nil then
-            love.graphics.rectangle("fill",mapxy[mappath][1]-2+pausemap,mapxy[mappath][2]-pt,3,3)
+            love.graphics.draw(headimg,mapxy[mappath][1]-2+pausemap,mapxy[mappath][2]-pt)
         end
 
         if left() and exiting>=320 and pausemap>=320 and pausing==false then
